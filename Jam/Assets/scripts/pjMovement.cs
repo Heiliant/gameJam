@@ -17,15 +17,34 @@ public class pjMovement : MonoBehaviour {
     camBehaviour myCamera;
     timerBehaviour myTimer;
 
+    private Vector3 camSpawnPoint;
+    private Vector3 mySpawnPoint;
+    public float deathTime=3.0f;
+    private float actualDeathTime;
+    public bool memuero;
+
+    public string regularTag;
+    public string shadowTag;
+    public void kill()
+    {
+        myCamera.Speed = camSpeedReleased;
+        memuero = true;
+    }
+
     // Use this for initialization
     void Start () {
         myJoint = GetComponent<TargetJoint2D>();
         myJoint.autoConfigureTarget = false;
 
+        camSpawnPoint = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Transform>().position;
+        mySpawnPoint = GetComponent<Transform>().position;
         myCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<camBehaviour>();
         myTimer = GameObject.Find("timer").GetComponent<timerBehaviour>();
 
         myCamera.Speed = camSpeedReleased;
+
+        memuero = false;
+        actualDeathTime = deathTime;
     }
 	
 	// Update is called once per frame
@@ -33,24 +52,46 @@ public class pjMovement : MonoBehaviour {
 
         Vector2 myMouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         me = GetComponent<Transform>().position;
-        
-        if (Input.GetMouseButton(0) && Vector2.Distance(me, myMouse) < rad)
+
+        if (!memuero)
         {
-            //the camera moves
-            rad = bigRad;
-            myJoint.target = myMouse;
-            myCamera.Speed = camSpeedPressed;
+            if (Input.GetMouseButton(0) && Vector2.Distance(me, myMouse) < rad)
+            {
+                //the camera moves
+                rad = bigRad;
+                myJoint.target = myMouse;
+                myCamera.Speed = camSpeedPressed;
 
-            myTimer.toCountdown = false;
+                myTimer.toCountdown = false;
 
+                gameObject.tag = regularTag;
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                //the camera stops moving
+                rad = littleRad;
+                myCamera.Speed = camSpeedReleased;
+
+                myTimer.toCountdown = true;
+
+                gameObject.tag = shadowTag;
+            }
         }
-        else if (Input.GetMouseButtonUp(0))
+        else
         {
-            //the camera stops moving
-            rad = littleRad;
-            myCamera.Speed = camSpeedReleased;
+            if(actualDeathTime>0.0f)
+                actualDeathTime -= Time.deltaTime;
+            else
+            {
+                actualDeathTime = deathTime;
+                GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Transform>().position = camSpawnPoint;
+                GetComponent<Transform>().position = mySpawnPoint;
+                myJoint.target = mySpawnPoint;
+                memuero = false;
+            }
+            Color mycolor = GetComponent<SpriteRenderer>().color;
+            GetComponent<SpriteRenderer>().color = new Color(mycolor.r, mycolor.g, mycolor.b, actualDeathTime / deathTime);
 
-            myTimer.toCountdown = true;
         }
     }
 }
